@@ -1,0 +1,937 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Waves Revision Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Familjen+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: lab-bench pages — sticky spec-referenced tab strip; each topic = oscilloscope-style sim + breakdown side by side, flip-card questions beneath. */
+:root{
+  --paper:#f4f7f6; --surface:#ffffff; --ink:#16212c; --muted:#56636f; --line:#d5dde2; --grid:#e6edf0;
+  --accent:#1f5fbf; --accent-soft:#e3ecfa; --wave2:#cf5c17; --node:#c2263d; --good:#1b7a4c; --good-soft:#e2f3ea; --warn-soft:#fbeee4;
+  --f-display:"Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f151b; --surface:#151d25; --ink:#e5ecf1; --muted:#93a1ad; --line:#2a3540; --grid:#1c2630;
+  --accent:#72a6ff; --accent-soft:#1a2a44; --wave2:#ff9a5c; --node:#ff6b80; --good:#4cc38a; --good-soft:#15302a; --warn-soft:#33241a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f151b; --surface:#151d25; --ink:#e5ecf1; --muted:#93a1ad; --line:#2a3540; --grid:#1c2630;
+  --accent:#72a6ff; --accent-soft:#1a2a44; --wave2:#ff9a5c; --node:#ff6b80; --good:#4cc38a; --good-soft:#15302a; --warn-soft:#33241a; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 14px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4.4vw,42px);line-height:1.08;margin:6px 0 8px;text-wrap:balance;letter-spacing:-.01em}
+h1 .sig{display:inline-block;vertical-align:middle;margin-left:6px}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.15;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0 0 8px}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+.tabrow{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;padding-block:8px 0}
+.tab{flex:0 0 auto;border:1px solid transparent;border-bottom:none;background:none;color:var(--muted);font:inherit;cursor:pointer;padding:8px 14px 10px;border-radius:8px 8px 0 0;text-align:left;display:flex;flex-direction:column;gap:1px;position:relative;top:1px}
+.tab .ref{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em}
+.tab .nm{font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--ink)}
+.tab:hover .nm{color:var(--accent)}
+.tab[aria-selected="true"]{background:var(--surface);border-color:var(--line);color:var(--accent)}
+.tab[aria-selected="true"] .nm{color:var(--accent)}
+.tab.practice .nm::before{content:"✎ ";}
+.tab:focus-visible,button:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+main{padding-block:22px 60px}
+.panel-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:8px 20px;margin-bottom:18px}
+.panel-head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.lab{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}}
+
+.scope{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.scope-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.scope canvas{display:block;width:100%}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 18px;padding:14px 14px 4px}
+.ctl label{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--muted)}
+.ctl label output{font-family:var(--f-mono);color:var(--ink);font-size:13px}
+.ctl input[type=range]{width:100%;accent-color:var(--accent);margin:4px 0 0}
+.toggles{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:none;background:var(--surface);color:var(--muted);font:inherit;font-size:14px;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);padding:6px 4px}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border-top:1px solid var(--line);margin-top:12px}
+.readout div{background:var(--surface);padding:10px 12px}
+.readout dt{font-size:12px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.03em}
+.readout dd{margin:2px 0 0;font-family:var(--f-mono);font-size:15px;font-variant-numeric:tabular-nums}
+.status{padding:10px 14px;font-size:14px;border-top:1px solid var(--line)}
+.status b{font-family:var(--f-display)}
+.pause{border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;font-size:12px;font-family:var(--f-mono);padding:3px 10px;border-radius:6px;cursor:pointer}
+
+.notes{display:flex;flex-direction:column;gap:16px;min-width:0}
+.eqbox{background:var(--accent-soft);border-radius:10px;padding:12px 14px}
+.eqbox h3{font-size:14px;font-family:var(--f-mono);font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.eq{font-family:var(--f-mono);font-size:15px;display:flex;flex-wrap:wrap;gap:6px 22px}
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px}
+.steps li::before{content:counter(s);font-family:var(--f-mono);font-size:12px;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);display:grid;place-items:center;margin-top:1px}
+.traps{background:var(--warn-soft);border-radius:10px;padding:12px 14px}
+.traps h3{color:var(--wave2);font-size:14px;font-family:var(--f-mono);font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.traps ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.try{font-size:14px;color:var(--muted);border-left:3px solid var(--line);padding-left:10px}
+.try b{color:var(--ink)}
+
+.qhead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin:36px 0 12px;border-top:1px solid var(--line);padding-top:22px}
+.qhead p{margin:0;color:var(--muted);font-size:14px}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+@media (max-width:420px){.qgrid{grid-template-columns:minmax(0,1fr)}}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.qcard.flipped{border-color:var(--good);background:linear-gradient(var(--good-soft),var(--good-soft)) top/100% 4px no-repeat, var(--surface)}
+.qmeta{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.qmeta .mk{color:var(--accent)}
+.qcard.flipped .qmeta .side{color:var(--good)}
+.qbody{flex:1;min-width:0}
+.qbody p{margin:0 0 8px}
+.qbody p:last-child{margin-bottom:0}
+.qbody ol,.qbody ul{margin:4px 0 8px;padding-left:20px}
+.qbody .opts{list-style:upper-alpha;padding-left:24px}
+.ans .work{font-family:var(--f-mono);font-size:13.5px;background:var(--paper);border-radius:8px;padding:8px 10px;margin:6px 0;overflow-x:auto;white-space:pre-wrap}
+.ans .final{font-weight:700;color:var(--good)}
+.flip{align-self:flex-start;border:1px solid var(--accent);background:none;color:var(--accent);font:inherit;font-size:14px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer}
+.flip:hover{background:var(--accent);color:var(--surface)}
+.qcard.flipped .flip{border-color:var(--good);color:var(--good)}
+.qcard.flipped .flip:hover{background:var(--good);color:var(--surface)}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tally{margin-left:auto;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.ghost{border:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;border-radius:8px;cursor:pointer}
+.tagline{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+sub,sup{font-size:.72em;line-height:0}
+footer{color:var(--muted);font-size:13px;padding-block:0 40px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">AQA A-level Physics 7408 · Section 3.3 Waves</div>
+    <h1>Waves Revision Lab</h1>
+    <p class="lede">Six of the trickiest parts of the waves topic, each with a live simulation, a step-by-step breakdown and questions. Answers stay hidden until you turn a card over. The last tab is a bank of exam-style practice.</p>
+  </header>
+</div>
+
+<nav class="tabs" aria-label="Topics">
+  <div class="wrap"><div class="tabrow" role="tablist" id="tablist">
+    <button class="tab" role="tab" data-tab="phase"><span class="ref">3.3.1.1</span><span class="nm">Phase difference</span></button>
+    <button class="tab" role="tab" data-tab="stationary"><span class="ref">3.3.1.3</span><span class="nm">Stationary waves</span></button>
+    <button class="tab" role="tab" data-tab="interference"><span class="ref">3.3.2.1</span><span class="nm">Interference</span></button>
+    <button class="tab" role="tab" data-tab="diffraction"><span class="ref">3.3.2.2</span><span class="nm">Diffraction</span></button>
+    <button class="tab" role="tab" data-tab="refraction"><span class="ref">3.3.2.3</span><span class="nm">Refraction &amp; fibres</span></button>
+    <button class="tab" role="tab" data-tab="polarisation"><span class="ref">3.3.1.2</span><span class="nm">Polarisation</span></button>
+    <button class="tab practice" role="tab" data-tab="practice"><span class="ref">Mixed</span><span class="nm">Exam practice</span></button>
+  </div></div>
+</nav>
+
+<main class="wrap">
+
+<!-- ============ PHASE ============ -->
+<section class="panel" id="p-phase" role="tabpanel" data-panel="phase">
+  <div class="panel-head"><div><div class="eyebrow">Progressive waves</div><h2>Phase and phase difference</h2>
+  <p>Move point B along the wave and watch how its motion compares with A. Switch to longitudinal to see the same idea with particles oscillating along the direction of travel.</p></div></div>
+  <div class="lab">
+    <div class="scope">
+      <div class="scope-bar"><span>wave travels →</span><button class="pause" data-pause="phase">Pause</button></div>
+      <canvas id="c-phase" aria-label="Animated progressive wave with points A and B"></canvas>
+      <div class="toggles"><div class="seg" id="ph-mode"><button aria-pressed="true" data-v="T">Transverse</button><button aria-pressed="false" data-v="L">Longitudinal</button></div></div>
+      <div class="controls">
+        <div class="ctl"><label for="ph-frac">Separation of A and B <output id="ph-frac-o"></output></label><input type="range" id="ph-frac" min="0" max="2" step="0.05" value="0.25"></div>
+      </div>
+      <dl class="readout">
+        <div><dt>Δx</dt><dd id="ph-dx"></dd></div>
+        <div><dt>Δφ (degrees)</dt><dd id="ph-deg"></dd></div>
+        <div><dt>Δφ (radians)</dt><dd id="ph-rad"></dd></div>
+      </dl>
+      <div class="status" id="ph-status"></div>
+    </div>
+    <div class="notes">
+      <div class="eqbox"><h3>Key equations</h3><div class="eq"><span>Δφ = 2πΔx / λ</span><span>Δφ = 360° × Δx / λ</span><span>v = fλ</span></div></div>
+      <div><h3>Breaking it down</h3><ol class="steps">
+        <li><div><b>Phase</b> is where a particle is in its cycle of oscillation. <b>Phase difference</b> is how far one point is ahead of or behind another, in degrees or radians.</div></li>
+        <li><div>On a progressive wave the phase difference depends only on how the separation compares with the wavelength: one whole λ is one whole cycle (2π rad).</div></li>
+        <li><div>A point further along the direction of travel <b>lags</b>. The wave reaches it later, so it does the same thing a fraction of a period later.</div></li>
+        <li><div>Phase difference is quoted between 0 and 2π. A separation of 1.25λ gives 2.5π rad, which is the same as 0.5π rad.</div></li>
+        <li><div>Particles oscillate about fixed positions. Energy moves along the wave, the medium does not. In a longitudinal wave the oscillation is parallel to the direction of travel.</div></li>
+      </ol></div>
+      <div class="traps"><h3>Common traps</h3><ul>
+        <li>Calculator in degrees when your answer is in radians (or the other way round).</li>
+        <li>Crest to the next trough is λ/2, so they are in <b>antiphase</b> (π rad), not λ apart.</li>
+        <li>In a longitudinal wave, the centre of a compression is a point of <b>zero</b> displacement, not maximum displacement.</li>
+        <li>Saying particles "move along with the wave". They don't.</li>
+      </ul></div>
+      <p class="try"><b>Try this:</b> set the separation to 0.50λ, then 1.00λ, then 1.50λ. Which settings put A and B in antiphase?</p>
+    </div>
+  </div>
+  <div class="qhead"><h3>Questions: phase</h3><p>Turn a card over to check your answer.</p></div>
+  <div class="qgrid" data-qset="phase"></div>
+</section>
+
+<!-- ============ STATIONARY ============ -->
+<section class="panel" id="p-stationary" role="tabpanel" data-panel="stationary" hidden>
+  <div class="panel-head"><div><div class="eyebrow">Superposition</div><h2>Stationary waves on a string</h2>
+  <p>A string fixed at both ends, as in Required Practical 1. Change the harmonic and the string's properties, and switch on the two travelling waves that add together to make the pattern.</p></div></div>
+  <div class="lab">
+    <div class="scope">
+      <div class="scope-bar"><span>N = node · A = antinode · loops coloured by phase</span><button class="pause" data-pause="stationary">Pause</button></div>
+      <canvas id="c-stationary" aria-label="Animated stationary wave on a string"></canvas>
+      <div class="toggles"><label class="check"><input type="checkbox" id="sw-comp"> Show the two travelling waves</label></div>
+      <div class="controls">
+        <div class="ctl"><label for="sw-n">Harmonic n <output id="sw-n-o"></output></label><input type="range" id="sw-n" min="1" max="6" step="1" value="2"></div>
+        <div class="ctl"><label for="sw-L">Length L <output id="sw-L-o"></output></label><input type="range" id="sw-L" min="0.30" max="1.20" step="0.01" value="0.65"></div>
+        <div class="ctl"><label for="sw-T">Tension T <output id="sw-T-o"></output></label><input type="range" id="sw-T" min="10" max="200" step="1" value="60"></div>
+        <div class="ctl"><label for="sw-mu">Mass per unit length μ <output id="sw-mu-o"></output></label><input type="range" id="sw-mu" min="0.1" max="5" step="0.1" value="0.4"></div>
+      </div>
+      <dl class="readout">
+        <div><dt>wave speed v</dt><dd id="sw-v"></dd></div>
+        <div><dt>λ for this harmonic</dt><dd id="sw-lam"></dd></div>
+        <div><dt>first harmonic f₁</dt><dd id="sw-f1"></dd></div>
+        <div><dt>this harmonic fₙ</dt><dd id="sw-fn"></dd></div>
+      </dl>
+    </div>
+    <div class="notes">
+      <div class="eqbox"><h3>Key equations</h3><div class="eq"><span>f₁ = (1/2L)√(T/μ)</span><span>v = √(T/μ)</span><span>λₙ = 2L/n</span><span>fₙ = nf₁</span></div></div>
+      <div><h3>Breaking it down</h3><ol class="steps">
+        <li><div>A wave travels to the fixed end and <b>reflects</b>. The incident and reflected waves have the same frequency, wavelength and (roughly) the same amplitude, and travel in opposite directions.</div></li>
+        <li><div>They <b>superpose</b>. At some points they always cancel: these are <b>nodes</b> (zero amplitude). The fixed ends must be nodes.</div></li>
+        <li><div>Halfway between nodes the waves always reinforce: <b>antinodes</b> (maximum amplitude). Node to adjacent node is <b>λ/2</b>.</div></li>
+        <li><div>All points between two adjacent nodes move <b>in phase</b>. Points in adjacent loops are in <b>antiphase</b>. Amplitude changes with position.</div></li>
+        <li><div>Only frequencies that fit a whole number of loops on the string are possible. The nth harmonic has n loops, so L = nλ/2.</div></li>
+        <li><div>A stationary wave stores energy but transfers <b>no net energy</b> along the string.</div></li>
+      </ol></div>
+      <div class="traps"><h3>Common traps</h3><ul>
+        <li>Node to node is λ/2, not λ. Two successive minima of a microwave or sound stationary wave are also λ/2 apart.</li>
+        <li>The "first harmonic" is the fundamental. The second harmonic has two loops.</li>
+        <li>μ must be in kg m⁻¹. Convert g m⁻¹ by dividing by 1000.</li>
+        <li>Quadrupling T only doubles f, because f ∝ √T.</li>
+      </ul></div>
+      <p class="try"><b>Try this:</b> note f₁, then double the tension. By what factor does f₁ change? Now halve L instead.</p>
+    </div>
+  </div>
+  <div class="qhead"><h3>Questions: stationary waves</h3><p>Turn a card over to check your answer.</p></div>
+  <div class="qgrid" data-qset="stationary"></div>
+</section>
+
+<!-- ============ INTERFERENCE ============ -->
+<section class="panel" id="p-interference" role="tabpanel" data-panel="interference" hidden>
+  <div class="panel-head"><div><div class="eyebrow">Young's double slit</div><h2>Interference and coherence</h2>
+  <p>Light from two slits spreads out and overlaps. The left view shows the waves superposing (exaggerated scale). The right strip shows the real fringe pattern on a screen for the values you set.</p></div></div>
+  <div class="lab">
+    <div class="scope">
+      <div class="scope-bar"><span>field view not to scale · screen to scale</span><button class="pause" data-pause="interference">Pause</button></div>
+      <canvas id="c-interference" aria-label="Two-slit interference pattern"></canvas>
+      <div class="toggles"><label class="check"><input type="checkbox" id="yi-incoh"> Make the sources incoherent</label></div>
+      <div class="controls">
+        <div class="ctl"><label for="yi-lam">Wavelength λ <output id="yi-lam-o"></output></label><input type="range" id="yi-lam" min="400" max="700" step="5" value="600"></div>
+        <div class="ctl"><label for="yi-s">Slit separation s <output id="yi-s-o"></output></label><input type="range" id="yi-s" min="0.20" max="1.00" step="0.02" value="0.50"></div>
+        <div class="ctl"><label for="yi-D">Slit–screen distance D <output id="yi-D-o"></output></label><input type="range" id="yi-D" min="1.0" max="3.0" step="0.1" value="2.0"></div>
+      </div>
+      <dl class="readout">
+        <div><dt>fringe spacing w</dt><dd id="yi-w"></dd></div>
+        <div><dt>w = λD / s</dt><dd id="yi-calc"></dd></div>
+      </dl>
+      <div class="status" id="yi-status"></div>
+    </div>
+    <div class="notes">
+      <div class="eqbox"><h3>Key equations</h3><div class="eq"><span>w = λD / s</span><span>bright: path diff = nλ</span><span>dark: path diff = (n + ½)λ</span></div></div>
+      <div><h3>Breaking it down</h3><ol class="steps">
+        <li><div><b>Coherent</b> sources have the same frequency and a <b>constant phase difference</b>. Without coherence the pattern moves about too fast to see.</div></li>
+        <li><div>At any point on the screen, compare the distances to each slit. This <b>path difference</b> decides the result.</div></li>
+        <li><div>Path difference of a whole number of wavelengths → waves arrive in phase → constructive → <b>bright fringe</b>.</div></li>
+        <li><div>Path difference of an odd number of half-wavelengths → antiphase → destructive → <b>dark fringe</b>.</div></li>
+        <li><div>Fringe spacing w = λD/s holds when D is much bigger than s. Measure across many fringes and divide, to cut the percentage uncertainty.</div></li>
+        <li><div>Using a laser: monochromatic and coherent. Using white light: central fringe white, the others are spectra with blue closest to the centre.</div></li>
+      </ol></div>
+      <div class="traps"><h3>Common traps</h3><ul>
+        <li>s is the slit <b>separation</b> (centre to centre), not the slit width.</li>
+        <li>Mixed units: s in mm, w in mm, D in m, λ in nm. Convert everything to metres.</li>
+        <li>Coherent does not mean "in phase". It means a constant phase difference.</li>
+        <li>Laser safety: never look into the beam, avoid shiny surfaces that reflect it, display warning signs.</li>
+      </ul></div>
+      <p class="try"><b>Try this:</b> tick "incoherent" and watch the field view. Why does the screen pattern wash out to an even brightness?</p>
+    </div>
+  </div>
+  <div class="qhead"><h3>Questions: interference</h3><p>Turn a card over to check your answer.</p></div>
+  <div class="qgrid" data-qset="interference"></div>
+</section>
+
+<!-- ============ DIFFRACTION ============ -->
+<section class="panel" id="p-diffraction" role="tabpanel" data-panel="diffraction" hidden>
+  <div class="panel-head"><div><div class="eyebrow">Single slit and grating</div><h2>Diffraction</h2>
+  <p>Switch between a single slit (intensity pattern on a screen 2.0 m away) and a diffraction grating (angles of each order). Try white light on the grating to see the spectra overlap.</p></div></div>
+  <div class="lab">
+    <div class="scope">
+      <div class="scope-bar"><span id="df-bar">screen 2.0 m from slit</span><span></span></div>
+      <canvas id="c-diffraction" aria-label="Diffraction pattern or grating orders"></canvas>
+      <div class="toggles"><div class="seg" id="df-mode"><button aria-pressed="true" data-v="slit">Single slit</button><button aria-pressed="false" data-v="grating">Grating</button></div>
+        <label class="check" id="df-white-wrap" hidden><input type="checkbox" id="df-white"> White light</label></div>
+      <div class="controls">
+        <div class="ctl"><label for="df-lam">Wavelength λ <output id="df-lam-o"></output></label><input type="range" id="df-lam" min="400" max="700" step="5" value="600"></div>
+        <div class="ctl" id="df-a-wrap"><label for="df-a">Slit width <output id="df-a-o"></output></label><input type="range" id="df-a" min="0.05" max="0.50" step="0.01" value="0.10"></div>
+        <div class="ctl" id="df-N-wrap" hidden><label for="df-N">Lines per mm <output id="df-N-o"></output></label><input type="range" id="df-N" min="100" max="1000" step="10" value="300"></div>
+      </div>
+      <dl class="readout" id="df-read"></dl>
+    </div>
+    <div class="notes">
+      <div class="eqbox"><h3>Key equations</h3><div class="eq"><span>d sin θ = nλ</span><span>d = 1 / (lines per metre)</span><span>n<sub>max</sub> = d/λ, rounded down</span></div></div>
+      <div><h3>Breaking it down</h3><ol class="steps">
+        <li><div><b>Single slit:</b> diffraction is most noticeable when the slit width is about the same as λ. The central maximum is twice as wide as the others and much brighter.</div></li>
+        <li><div>A <b>narrower slit</b> or a <b>longer wavelength</b> spreads the pattern out: the central maximum gets wider. A narrower slit also makes it dimmer.</div></li>
+        <li><div><b>Grating:</b> θ is measured from the straight-through (zero-order) beam. If you are given the angle between two matching orders on either side, <b>halve it</b>.</div></li>
+        <li><div>Find d from lines per mm: 300 lines mm⁻¹ → d = 1/300 mm = 3.33 × 10⁻⁶ m.</div></li>
+        <li><div>sin θ cannot exceed 1, so n<sub>max</sub> is d/λ <b>rounded down</b>. Total spots seen = 2n<sub>max</sub> + 1.</div></li>
+        <li><div>More slits make the maxima sharper and brighter, which is why gratings are used for accurate wavelength measurements and spectroscopy.</div></li>
+      </ol></div>
+      <div class="traps"><h3>Common traps</h3><ul>
+        <li>Rounding n<sub>max</sub> up. 5.66 means the 5th order is the highest.</li>
+        <li>Using lines per mm directly as d.</li>
+        <li>With white light, the zero order is white because every wavelength has zero path difference at θ = 0.</li>
+        <li>If d/λ is exactly a whole number, that last order would be at 90° and is not observed.</li>
+      </ul></div>
+      <p class="try"><b>Try this:</b> on the grating with white light at 500 lines mm⁻¹, look for where the second and third orders overlap.</p>
+    </div>
+  </div>
+  <div class="qhead"><h3>Questions: diffraction</h3><p>Turn a card over to check your answer.</p></div>
+  <div class="qgrid" data-qset="diffraction"></div>
+</section>
+
+<!-- ============ REFRACTION ============ -->
+<section class="panel" id="p-refraction" role="tabpanel" data-panel="refraction" hidden>
+  <div class="panel-head"><div><div class="eyebrow">Refraction at a plane surface</div><h2>Refraction, TIR and optical fibres</h2>
+  <p>Change the angle and refractive indices to find the critical angle. Switch to the fibre view to see when light stays trapped in the core.</p></div></div>
+  <div class="lab">
+    <div class="scope">
+      <div class="scope-bar"><span id="rf-bar">ray from medium 1 into medium 2</span><button class="pause" data-pause="refraction">Pause</button></div>
+      <canvas id="c-refraction" aria-label="Ray diagram for refraction and total internal reflection"></canvas>
+      <div class="toggles"><div class="seg" id="rf-mode"><button aria-pressed="true" data-v="boundary">Boundary</button><button aria-pressed="false" data-v="fibre">Optical fibre</button></div></div>
+      <div class="controls">
+        <div class="ctl"><label for="rf-th" id="rf-th-l">Angle of incidence <output id="rf-th-o"></output></label><input type="range" id="rf-th" min="0" max="89" step="0.5" value="35"></div>
+        <div class="ctl"><label for="rf-n1" id="rf-n1-l">n₁ (lower medium) <output id="rf-n1-o"></output></label><input type="range" id="rf-n1" min="1.00" max="2.00" step="0.01" value="1.50"></div>
+        <div class="ctl"><label for="rf-n2" id="rf-n2-l">n₂ (upper medium) <output id="rf-n2-o"></output></label><input type="range" id="rf-n2" min="1.00" max="2.00" step="0.01" value="1.00"></div>
+      </div>
+      <dl class="readout" id="rf-read"></dl>
+      <div class="status" id="rf-status"></div>
+    </div>
+    <div class="notes">
+      <div class="eqbox"><h3>Key equations</h3><div class="eq"><span>n = c / c<sub>s</sub></span><span>n₁ sin θ₁ = n₂ sin θ₂</span><span>sin θ<sub>c</sub> = n₂ / n₁</span></div></div>
+      <div><h3>Breaking it down</h3><ol class="steps">
+        <li><div>All angles are measured from the <b>normal</b>. Light slows down in a higher-n medium and bends towards the normal.</div></li>
+        <li><div><b>Total internal reflection</b> needs two things: light going from higher n to lower n, <b>and</b> an angle of incidence greater than the critical angle.</div></li>
+        <li><div>An optical fibre has a high-n <b>core</b> and lower-n <b>cladding</b>. Cladding keeps TIR at the core boundary, protects the core from scratches that would let light escape, and stops signals crossing between fibres.</div></li>
+        <li><div><b>Modal dispersion:</b> rays taking different paths arrive at different times. Reduce it with a very narrow (monomode) core.</div></li>
+        <li><div><b>Material dispersion:</b> different wavelengths travel at different speeds in glass. Reduce it with a monochromatic source.</div></li>
+        <li><div>Both cause <b>pulse broadening</b>: pulses can overlap, which limits the data rate. <b>Absorption</b> reduces amplitude. Regenerators (repeaters) restore the signal.</div></li>
+      </ol></div>
+      <div class="traps"><h3>Common traps</h3><ul>
+        <li>Measuring angles from the surface instead of the normal.</li>
+        <li>sin θ<sub>c</sub> = n₂/n₁ is always smaller ÷ larger. If you get a value above 1, there is no critical angle.</li>
+        <li>Mixing up modal and material dispersion and their fixes.</li>
+      </ul></div>
+      <p class="try"><b>Try this:</b> in the fibre view, raise the cladding index towards the core index. What happens to the largest entry angle that stays trapped?</p>
+    </div>
+  </div>
+  <div class="qhead"><h3>Questions: refraction and fibres</h3><p>Turn a card over to check your answer.</p></div>
+  <div class="qgrid" data-qset="refraction"></div>
+</section>
+
+<!-- ============ POLARISATION ============ -->
+<section class="panel" id="p-polarisation" role="tabpanel" data-panel="polarisation" hidden>
+  <div class="panel-head"><div><div class="eyebrow">Transverse waves</div><h2>Polarisation</h2>
+  <p>Unpolarised light passes through a fixed polariser, then an analyser you can rotate. The graph shows how the transmitted intensity changes as you turn it.</p></div></div>
+  <div class="lab">
+    <div class="scope">
+      <div class="scope-bar"><span>source → polariser → analyser → detector</span><button class="pause" data-pause="polarisation">Pause</button></div>
+      <canvas id="c-polarisation" aria-label="Light passing through a polariser and analyser"></canvas>
+      <div class="controls">
+        <div class="ctl"><label for="po-th">Analyser angle <output id="po-th-o"></output></label><input type="range" id="po-th" min="0" max="360" step="1" value="30"></div>
+      </div>
+      <dl class="readout">
+        <div><dt>angle between axes</dt><dd id="po-ang"></dd></div>
+        <div><dt>intensity after analyser</dt><dd id="po-I"></dd></div>
+      </dl>
+      <div class="status" id="po-status"></div>
+    </div>
+    <div class="notes">
+      <div class="eqbox"><h3>Key idea</h3><div class="eq"><span>Only transverse waves can be polarised.</span></div></div>
+      <div><h3>Breaking it down</h3><ol class="steps">
+        <li><div>In <b>unpolarised</b> light, the oscillations are in every plane perpendicular to the direction of travel.</div></li>
+        <li><div>A polariser lets through only oscillations in one plane. The light is now <b>plane polarised</b>.</div></li>
+        <li><div>Rotating a second filter (the analyser) through 360°: maximum at 0°, zero at 90°, maximum at 180°, zero at 270°. Two maxima and two minima per turn.</div></li>
+        <li><div>Light can be polarised, so it must be a <b>transverse</b> wave. Sound cannot be polarised because it is longitudinal.</div></li>
+        <li><div>Uses: polaroid sunglasses cut glare, because light reflected off water or roads is partly polarised. TV and radio aerials are lined up with the transmitter's plane of polarisation.</div></li>
+      </ol></div>
+      <div class="traps"><h3>Common traps</h3><ul>
+        <li>Intensity is zero at 90°, not 180°. At 180° the axes are parallel again.</li>
+        <li>A metal grille for microwaves absorbs oscillations <b>parallel</b> to its rods. Maximum signal gets through when the rods are perpendicular to the plane of oscillation.</li>
+        <li>For AQA you need the pattern only. The cos² relationship drawn on the graph is shown for interest.</li>
+      </ul></div>
+      <p class="try"><b>Try this:</b> find every analyser angle between 0° and 360° where the detector goes dark.</p>
+    </div>
+  </div>
+  <div class="qhead"><h3>Questions: polarisation</h3><p>Turn a card over to check your answer.</p></div>
+  <div class="qgrid" data-qset="polarisation"></div>
+</section>
+
+<!-- ============ PRACTICE ============ -->
+<section class="panel" id="p-practice" role="tabpanel" data-panel="practice" hidden>
+  <div class="panel-head"><div><div class="eyebrow">Mixed exam-style questions</div><h2>Exam practice</h2>
+  <p>A-level style questions across the whole waves topic: multiple choice, calculations, explanations and extended response. Write your answer down first, then turn the card over to mark it.</p></div></div>
+  <div class="filters" id="filters">
+    <button class="chip" aria-pressed="true" data-f="all">All</button>
+    <button class="chip" aria-pressed="false" data-f="mc">Multiple choice</button>
+    <button class="chip" aria-pressed="false" data-f="phase">Phase</button>
+    <button class="chip" aria-pressed="false" data-f="stationary">Stationary</button>
+    <button class="chip" aria-pressed="false" data-f="interference">Interference</button>
+    <button class="chip" aria-pressed="false" data-f="diffraction">Diffraction</button>
+    <button class="chip" aria-pressed="false" data-f="refraction">Refraction</button>
+    <button class="chip" aria-pressed="false" data-f="polarisation">Polarisation</button>
+    <button class="chip" aria-pressed="false" data-f="extended">6-mark</button>
+    <span class="tally" id="tally"></span>
+    <button class="ghost" id="reset">Turn all cards back</button>
+  </div>
+  <div class="qgrid" data-qset="practice"></div>
+</section>
+</main>
+
+<div class="wrap"><footer>Built for AQA 7408 revision. Use g = 9.81 N kg⁻¹, c = 3.00 × 10⁸ m s⁻¹, speed of sound = 340 m s⁻¹ unless a question says otherwise.</footer></div>
+
+<script>
+/* ---------------- question bank ---------------- */
+const Q = {
+phase:[
+ {m:2,q:`<p>Two points on a progressive wave are 0.15 m apart. The wavelength is 0.60 m.</p><p>Calculate the phase difference between them in radians.</p>`,
+  a:`<div class="work">Δφ = 2πΔx/λ = 2π × 0.15 / 0.60</div><p class="final">Δφ = π/2 rad (1.57 rad)</p><p>The points are a quarter of a wavelength apart, so a quarter of a cycle.</p>`},
+ {m:3,q:`<p>A sound wave has frequency 250 Hz and travels at 340 m s⁻¹.</p><p>Calculate the minimum distance between two points on the wave that have a phase difference of π/3 rad.</p>`,
+  a:`<div class="work">λ = v/f = 340/250 = 1.36 m
+Δx = (Δφ/2π) λ = (1/6) × 1.36</div><p class="final">Δx = 0.23 m</p>`},
+ {m:2,q:`<p>Two points on a progressive wave are 1.5λ apart.</p><p>State their phase difference and describe how their displacements compare at any instant.</p>`,
+  a:`<p class="final">π rad (180°): they are in antiphase.</p><p>3π rad reduces to π rad. Their displacements are always equal in size and opposite in direction.</p>`},
+ {m:3,q:`<p>A transverse wave travels from left to right. Point Y is λ/4 to the right of point X. At one instant X is at maximum positive displacement.</p><p>State the displacement of Y at this instant and the direction in which Y is moving.</p>`,
+  a:`<p class="final">Y is at zero displacement (equilibrium), moving upwards.</p><p>Y is further along the direction of travel, so it lags X by a quarter cycle. A quarter of a period later Y will be where X is now, at maximum positive displacement, so it must be on its way up.</p>`},
+ {m:2,q:`<p>In a longitudinal wave, state where the particles have maximum displacement relative to the compressions and rarefactions.</p>`,
+  a:`<p class="final">Halfway between a compression and the neighbouring rarefaction.</p><p>At the centre of a compression or rarefaction the displacement is zero; particles either side are displaced towards (compression) or away from (rarefaction) it.</p>`}
+],
+stationary:[
+ {m:2,q:`<p>A string of vibrating length 0.80 m carries waves at 120 m s⁻¹.</p><p>Calculate the frequency of the first harmonic and of the third harmonic.</p>`,
+  a:`<div class="work">first harmonic: λ = 2L = 1.60 m
+f₁ = v/λ = 120/1.60 = 75 Hz
+f₃ = 3f₁</div><p class="final">f₁ = 75 Hz, f₃ = 225 Hz</p>`},
+ {m:3,q:`<p>A string of length 0.65 m is under a tension of 60 N. Its mass per unit length is 4.0 × 10⁻⁴ kg m⁻¹.</p><p>Calculate the frequency of the first harmonic.</p>`,
+  a:`<div class="work">f₁ = (1/2L)√(T/μ)
+  = (1/1.30) × √(60 / 4.0×10⁻⁴)
+  = (1/1.30) × 387</div><p class="final">f₁ = 298 Hz (≈ 300 Hz)</p>`},
+ {m:2,q:`<p>The tension in a string is increased by a factor of 4 and its length is halved. μ is unchanged.</p><p>By what factor does the first-harmonic frequency change?</p>`,
+  a:`<div class="work">f ∝ √T / L
+√4 = 2 (from tension), ×2 (from halving L)</div><p class="final">Frequency increases by a factor of 4.</p>`},
+ {m:2,q:`<p>Point P is in one loop of a stationary wave. Point Q is in the next loop along. Point R is in the same loop as P.</p><p>State the phase difference between P and Q, and between P and R.</p>`,
+  a:`<p class="final">P and Q: π rad (180°). P and R: 0.</p><p>All points between two adjacent nodes oscillate in phase; adjacent loops are in antiphase. Their amplitudes may differ.</p>`},
+ {m:3,q:`<p>Give three differences between a stationary wave and a progressive wave.</p>`,
+  a:`<ul><li>Stationary: no net energy transfer. Progressive: transfers energy.</li><li>Stationary: amplitude varies with position (zero at nodes). Progressive: all points have the same amplitude (no damping).</li><li>Stationary: points between adjacent nodes in phase, adjacent loops in antiphase. Progressive: phase changes continuously along the wave.</li></ul><p>Also accepted: stationary has nodes and antinodes; progressive does not.</p>`},
+ {m:3,q:`<p>Microwaves reflect from a metal plate back towards the transmitter, forming a stationary wave. A detector moved along the line finds successive minima 1.4 cm apart.</p><p>Calculate the frequency of the microwaves.</p>`,
+  a:`<div class="work">successive minima (nodes) are λ/2 apart
+λ = 2 × 1.4 cm = 2.8 × 10⁻² m
+f = c/λ = 3.00×10⁸ / 2.8×10⁻²</div><p class="final">f = 1.1 × 10¹⁰ Hz</p>`}
+],
+interference:[
+ {m:2,q:`<p>Laser light of wavelength 633 nm passes through two slits 0.50 mm apart. The screen is 2.4 m from the slits.</p><p>Calculate the fringe spacing.</p>`,
+  a:`<div class="work">w = λD/s = 633×10⁻⁹ × 2.4 / 0.50×10⁻³</div><p class="final">w = 3.0 × 10⁻³ m (3.0 mm)</p>`},
+ {m:4,q:`<p>A student measures the distance across 10 fringe spacings as 18 mm. D = 1.80 m and s = 0.60 mm.</p><ol type="a"><li>Calculate the wavelength.</li><li>Explain why the student measured across 10 fringes rather than one.</li></ol>`,
+  a:`<div class="work">w = 18/10 = 1.8 mm
+λ = ws/D = 1.8×10⁻³ × 0.60×10⁻³ / 1.80</div><p class="final">(a) λ = 6.0 × 10⁻⁷ m (600 nm)</p><p>(b) The uncertainty in reading the ruler is the same whichever distance is measured, so measuring a larger distance gives a smaller percentage uncertainty in w.</p>`},
+ {m:2,q:`<p>Explain why two separate light bulbs placed side by side do not produce a visible interference pattern.</p>`,
+  a:`<p>The bulbs are not <b>coherent</b>: each emits light in random, short bursts, so the phase difference between them keeps changing. The pattern of maxima and minima shifts too rapidly to be seen, giving even illumination.</p>`},
+ {m:2,q:`<p>For a double-slit arrangement with in-phase slits, state the path difference at the centre of the third dark fringe from the central maximum.</p>`,
+  a:`<p class="final">2.5λ</p><p>Dark fringes occur at 0.5λ, 1.5λ, 2.5λ … so the third one is at 2.5λ.</p>`},
+ {m:3,q:`<p>The laser is replaced by a white light source with a filter removed. Describe the pattern now seen.</p>`,
+  a:`<ul><li>Central fringe is <b>white</b> (zero path difference for all wavelengths).</li><li>Other bright fringes are <b>spectra</b>, with blue/violet nearer the centre and red further out (w ∝ λ).</li><li>Fringes become blurred and fade further from the centre as the colours overlap.</li></ul>`},
+ {m:2,q:`<p>State two safety precautions when using a laser in a school laboratory.</p>`,
+  a:`<p>Any two: never look directly into the beam or point it at people; remove or cover reflective surfaces; keep the beam below eye level; display a laser warning sign; use a low-power (Class 2) laser.</p>`}
+],
+diffraction:[
+ {m:4,q:`<p>Light of wavelength 589 nm is incident normally on a grating with 300 lines per mm.</p><ol type="a"><li>Calculate the angle of the first-order maximum.</li><li>Calculate the highest order that can be observed.</li></ol>`,
+  a:`<div class="work">d = 1/(300 × 10³) = 3.33 × 10⁻⁶ m
+sin θ = λ/d = 589×10⁻⁹ / 3.33×10⁻⁶ = 0.177
+d/λ = 5.66 → round down</div><p class="final">(a) θ = 10.2°  (b) highest order = 5</p>`},
+ {m:3,q:`<p>Light of wavelength 500 nm produces a second-order maximum at 28.0° from the straight-through position.</p><p>Calculate the number of lines per mm on the grating.</p>`,
+  a:`<div class="work">d = nλ / sin θ = 2 × 500×10⁻⁹ / sin 28.0° = 2.13 × 10⁻⁶ m
+lines per m = 1/d = 4.69 × 10⁵</div><p class="final">≈ 470 lines per mm</p>`},
+ {m:3,q:`<p>Monochromatic light passes through a single slit. Describe how the pattern changes when the slit is made narrower.</p>`,
+  a:`<ul><li>The central maximum becomes <b>wider</b> (and so do the other maxima).</li><li>The central maximum becomes <b>less intense</b> because less light passes through the slit.</li><li>The central maximum stays twice the width of the others.</li></ul>`},
+ {m:2,q:`<p>White light passes through a diffraction grating. Explain why the zero-order maximum is white.</p>`,
+  a:`<p>At θ = 0 the path difference from adjacent slits is zero for <b>every</b> wavelength, so all colours interfere constructively at the same place and recombine to give white.</p>`},
+ {m:2,q:`<p>For a certain grating and light source, d/λ is exactly 4.00. How many maxima are seen in total? Explain.</p>`,
+  a:`<p class="final">7 maxima</p><p>The 4th order would need sin θ = 1, i.e. θ = 90°, travelling along the grating, so it is not observed. Orders 0, ±1, ±2, ±3 are seen: 2 × 3 + 1 = 7.</p>`},
+ {m:2,q:`<p>Explain why a diffraction grating is preferred over a double slit for measuring wavelength accurately.</p>`,
+  a:`<p>With many slits the maxima are much <b>sharper</b> (narrower) and <b>brighter</b>, and are more widely spaced. Their angles can be measured far more precisely.</p>`}
+],
+refraction:[
+ {m:2,q:`<p>An optical fibre has a core of refractive index 1.52 and cladding of refractive index 1.48.</p><p>Calculate the critical angle at the core–cladding boundary.</p>`,
+  a:`<div class="work">sin θc = n₂/n₁ = 1.48/1.52 = 0.974</div><p class="final">θc = 76.8°</p>`},
+ {m:2,q:`<p>Light in air hits a glass block (n = 1.50) at 40° to the normal.</p><p>Calculate the angle of refraction.</p>`,
+  a:`<div class="work">1.00 × sin 40° = 1.50 × sin θ₂
+sin θ₂ = 0.643/1.50 = 0.429</div><p class="final">θ₂ = 25.4°</p>`},
+ {m:1,q:`<p>Calculate the speed of light in glass of refractive index 1.50.</p>`,
+  a:`<div class="work">c<sub>s</sub> = c/n = 3.00×10⁸ / 1.50</div><p class="final">2.00 × 10⁸ m s⁻¹</p>`},
+ {m:3,q:`<p>State three reasons why optical fibres have cladding.</p>`,
+  a:`<ul><li>Its lower refractive index means TIR happens at the core boundary.</li><li>It protects the core from scratches, which would let light escape.</li><li>It prevents signals crossing from one fibre to another (security/crosstalk).</li></ul>`},
+ {m:4,q:`<p>Explain the difference between modal and material dispersion, and how each can be reduced.</p>`,
+  a:`<p><b>Modal:</b> rays enter at different angles and take different paths; longer paths take more time, so the pulse spreads. Reduce with a very narrow core (monomode fibre).</p><p><b>Material:</b> different wavelengths travel at different speeds in glass, so the pulse spreads. Reduce with monochromatic light.</p><p>Both cause pulse broadening, which limits how close pulses can be (data rate).</p>`}
+],
+polarisation:[
+ {m:1,q:`<p>What does the fact that light can be polarised tell us about the nature of light?</p>`,
+  a:`<p class="final">Light is a transverse wave.</p>`},
+ {m:3,q:`<p>Unpolarised light passes through two polarising filters. The second is rotated slowly through 360°.</p><p>Describe what an observer sees.</p>`,
+  a:`<p>Intensity varies between maximum and zero. Starting from axes parallel: maximum at 0°, zero at 90°, maximum at 180°, zero at 270°, maximum at 360°. Two maxima and two minima in one full turn.</p>`},
+ {m:2,q:`<p>Explain how polaroid sunglasses reduce glare from the surface of a lake.</p>`,
+  a:`<p>Light reflected from the water is partially <b>polarised</b> (mostly horizontally). The lenses' transmission axis is vertical, so they absorb much of this reflected light while letting other light through.</p>`},
+ {m:2,q:`<p>Explain why sound waves cannot be polarised.</p>`,
+  a:`<p>Sound is <b>longitudinal</b>: oscillations are parallel to the direction of travel, so there is only one possible direction of oscillation and nothing for a filter to select.</p>`},
+ {m:2,q:`<p>A microwave transmitter emits vertically polarised waves. A metal grille with vertical rods is placed between it and a receiver, then rotated by 90°.</p><p>Describe the readings on the receiver.</p>`,
+  a:`<p>With vertical rods: reading is close to <b>zero</b>, because the rods absorb oscillations parallel to them. Rotated so the rods are horizontal: reading is <b>maximum</b>.</p>`}
+],
+practice:[
+ {t:"phase",m:2,q:`<p>A wave has frequency 50 Hz and wavelength 0.40 m. Calculate the time it takes to travel 6.0 m.</p>`,
+  a:`<div class="work">v = fλ = 50 × 0.40 = 20 m s⁻¹
+t = 6.0/20</div><p class="final">t = 0.30 s</p>`},
+ {t:"stationary mc",m:1,q:`<p>Two points on a stationary wave lie between the same pair of adjacent nodes. What is their phase difference?</p><ol class="opts"><li>0</li><li>π/2 rad</li><li>π rad</li><li>2π rad</li></ol>`,
+  a:`<p class="final">A</p><p>All points within one loop oscillate in phase.</p>`},
+ {t:"stationary",m:3,q:`<p>A guitar string of vibrating length 0.65 m has a first-harmonic frequency of 110 Hz. The tension is 70 N.</p><p>Calculate (a) the wave speed on the string and (b) the mass per unit length.</p>`,
+  a:`<div class="work">v = 2Lf = 2 × 0.65 × 110 = 143 m s⁻¹
+μ = T/v² = 70 / 143²</div><p class="final">(a) 143 m s⁻¹  (b) 3.4 × 10⁻³ kg m⁻¹</p>`},
+ {t:"stationary",m:2,q:`<p>For the guitar string above, a finger shortens the vibrating length to 0.49 m. Tension is unchanged. Calculate the new first-harmonic frequency.</p>`,
+  a:`<div class="work">f ∝ 1/L
+f = 110 × 0.65/0.49</div><p class="final">f = 146 Hz</p>`},
+ {t:"interference",m:3,q:`<p>In a Young's double-slit experiment, s = 0.25 mm and D = 1.20 m. The distance across 8 fringe spacings is 22.4 mm. Calculate the wavelength.</p>`,
+  a:`<div class="work">w = 22.4/8 = 2.8 mm
+λ = ws/D = 2.8×10⁻³ × 0.25×10⁻³ / 1.20</div><p class="final">λ = 5.8 × 10⁻⁷ m (583 nm)</p>`},
+ {t:"interference",m:2,q:`<p>State two changes to a double-slit experiment that would increase the fringe spacing.</p>`,
+  a:`<p>Any two: increase D; decrease the slit separation s; use light of longer wavelength (e.g. red instead of green).</p>`},
+ {t:"diffraction",m:3,q:`<p>A grating with 600 lines per mm is used with a spectrometer. The angle between the two second-order maxima (one on each side) is 69.0°. Calculate the wavelength.</p>`,
+  a:`<div class="work">θ = 69.0/2 = 34.5°
+d = 1/(600×10³) = 1.667 × 10⁻⁶ m
+λ = d sin θ / n = 1.667×10⁻⁶ × sin 34.5° / 2</div><p class="final">λ = 4.72 × 10⁻⁷ m (472 nm)</p><p>Trap: forgetting to halve the 69.0°.</p>`},
+ {t:"diffraction",m:2,q:`<p>For the grating and wavelength in the previous question, calculate the total number of maxima that can be seen.</p>`,
+  a:`<div class="work">d/λ = 1.667×10⁻⁶ / 4.72×10⁻⁷ = 3.53 → n<sub>max</sub> = 3
+total = 2 × 3 + 1</div><p class="final">7 maxima</p>`},
+ {t:"refraction mc",m:1,q:`<p>What is the speed of light in water of refractive index 1.33?</p><ol class="opts"><li>1.33 × 10⁸ m s⁻¹</li><li>2.26 × 10⁸ m s⁻¹</li><li>3.00 × 10⁸ m s⁻¹</li><li>3.99 × 10⁸ m s⁻¹</li></ol>`,
+  a:`<p class="final">B</p><div class="work">c<sub>s</sub> = 3.00×10⁸ / 1.33 = 2.26 × 10⁸ m s⁻¹</div>`},
+ {t:"refraction",m:2,q:`<p>Light travels in glass (n = 1.50) towards a boundary with water (n = 1.33). Calculate the critical angle.</p>`,
+  a:`<div class="work">sin θc = 1.33/1.50 = 0.887</div><p class="final">θc = 62.5°</p>`},
+ {t:"refraction",m:4,q:`<p>A step-index fibre is 2.0 km long. The core has n = 1.46 and the cladding n = 1.44.</p><ol type="a"><li>Calculate the time for a ray travelling along the axis to pass through the fibre.</li><li>A ray that meets the boundary at exactly the critical angle travels a path 1/sin θc times longer. Calculate the difference in arrival times.</li></ol>`,
+  a:`<div class="work">(a) v = 3.00×10⁸/1.46 = 2.05 × 10⁸ m s⁻¹
+    t = 2000 / 2.05×10⁸ = 9.73 × 10⁻⁶ s
+(b) sin θc = 1.44/1.46
+    extra factor = 1.46/1.44 = 1.0139
+    Δt = 9.73×10⁻⁶ × 0.0139</div><p class="final">(a) 9.7 μs  (b) Δt ≈ 1.4 × 10⁻⁷ s</p><p>This is modal dispersion.</p>`},
+ {t:"stationary",m:3,q:`<p>Explain how a stationary wave forms on a string fixed at both ends, and why the ends are always nodes.</p>`,
+  a:`<ul><li>Waves travel along the string and reflect at the fixed ends.</li><li>Incident and reflected waves, with the same frequency and wavelength, travelling in opposite directions, superpose.</li><li>The ends cannot move, so displacement there is always zero: they must be nodes.</li></ul>`},
+ {t:"polarisation",m:2,q:`<p>A photographer uses a polarising filter when photographing fish in a pond. Explain why this helps.</p>`,
+  a:`<p>Light reflected from the water surface is partially polarised. Rotating the filter to block that plane removes much of the reflected glare, while light from below the surface (from the fish) still gets through.</p>`},
+ {t:"diffraction mc",m:1,q:`<p>In a single-slit diffraction experiment the slit width is doubled. The width of the central maximum:</p><ol class="opts"><li>halves</li><li>doubles</li><li>quarters</li><li>stays the same</li></ol>`,
+  a:`<p class="final">A</p><p>Width of the central maximum ∝ λ/(slit width).</p>`},
+ {t:"interference",m:4,q:`<p>Two loudspeakers 1.5 m apart are connected to the same signal generator. A student walks along a line parallel to the speakers, 8.0 m away, and hears loud regions 1.2 m apart.</p><ol type="a"><li>Explain why the loudspeakers act as coherent sources.</li><li>Estimate the frequency of the sound. (Speed of sound 340 m s⁻¹.)</li></ol>`,
+  a:`<p>(a) Both are driven by the same signal generator, so they have the same frequency and a constant phase difference.</p><div class="work">λ = ws/D = 1.2 × 1.5 / 8.0 = 0.225 m
+f = v/λ = 340/0.225</div><p class="final">(b) f ≈ 1.5 kHz</p><p>Only an estimate: w = λD/s assumes D ≫ s.</p>`},
+ {t:"interference",m:2,q:`<p>Microwaves of wavelength 3.0 cm pass through two slits. At a detector, the distances to the two slits are 45.0 cm and 52.5 cm. Is the detector at a maximum or a minimum? Explain.</p>`,
+  a:`<div class="work">path difference = 7.5 cm = 7.5/3.0 = 2.5λ</div><p class="final">Minimum</p><p>Path difference is an odd number of half wavelengths, so the waves arrive in antiphase and interfere destructively.</p>`},
+ {t:"phase",m:2,q:`<p>Points P and Q are 0.25 m apart on a wave of frequency 40 Hz and speed 12 m s⁻¹. Calculate the phase difference between P and Q in radians.</p>`,
+  a:`<div class="work">λ = 12/40 = 0.30 m
+Δφ = 2π × 0.25/0.30</div><p class="final">Δφ = 5.2 rad</p><p>Equivalent to Q leading by 1.05 rad (π/3); either is accepted if explained.</p>`},
+ {t:"stationary mc",m:1,q:`<p>Which statement about a particle at an antinode of a stationary wave is correct?</p><ol class="opts"><li>It is always at maximum displacement.</li><li>It oscillates with the largest amplitude on the wave.</li><li>It is always stationary.</li><li>It oscillates in antiphase with every other particle in its loop.</li></ol>`,
+  a:`<p class="final">B</p><p>It still passes through zero displacement every half cycle, so A is wrong.</p>`},
+ {t:"refraction",m:1,q:`<p>State why using a monochromatic light source reduces pulse broadening in an optical fibre.</p>`,
+  a:`<p>All the light has the same wavelength, so it all travels at the same speed in the core: <b>no material dispersion</b>.</p>`},
+ {t:"polarisation mc",m:1,q:`<p>Two polarising filters have their transmission axes parallel. The second is rotated by 90°. The intensity transmitted by the second filter is now:</p><ol class="opts"><li>a maximum</li><li>half its previous value</li><li>zero</li><li>a quarter of its previous value</li></ol>`,
+  a:`<p class="final">C</p>`},
+ {t:"diffraction",m:2,q:`<p>Give two applications of diffraction gratings.</p>`,
+  a:`<p>Any two: spectroscopy (identifying elements from line spectra, e.g. in stars); measuring wavelengths of light; X-ray crystallography (atoms in a crystal act as a grating) to find atomic spacing.</p>`},
+ {t:"stationary extended",m:6,q:`<p>Describe how you would investigate how the first-harmonic frequency of a stretched string depends on its tension (Required Practical 1).</p><p>Include the apparatus, how you would identify the first harmonic, how tension is varied and measured, and how you would analyse the results.</p>`,
+  a:`<p><b>Level 3 answer covers:</b></p><ul><li>String fixed at one end, passing over a pulley with masses hanging on the other end; a vibration generator near the fixed end driven by a signal generator.</li><li>T = mg; change T by adding masses (e.g. 100 g at a time).</li><li>Keep vibrating length L fixed (measured with a metre rule between the bridges) and use the same string so μ is constant.</li><li>Increase frequency from low until a single loop with maximum amplitude appears; read f from the signal generator. Repeat and average.</li><li>Plot f against √T: a straight line through the origin confirms f ∝ √T; gradient = 1/(2L√μ).</li><li>Safety: masses could fall, so use a sand tray or cushion and keep feet clear.</li></ul>`},
+ {t:"diffraction extended",m:6,q:`<p>Describe how a laser and a diffraction grating can be used to determine the wavelength of the laser light as accurately as possible (Required Practical 2).</p>`,
+  a:`<p><b>Level 3 answer covers:</b></p><ul><li>Laser shone normally through a grating of known lines per mm; pattern on a screen a distance D away (about 1–2 m).</li><li>Measure D with a metre rule or tape; measure the distance between the maxima of the same order on each side of the centre and halve it to get x.</li><li>θ = tan⁻¹(x/D) for each order; use d sin θ = nλ, with d = 1/(lines per m).</li><li>Use the highest orders visible (bigger distances → lower percentage uncertainty); repeat and average, or plot sin θ against n (gradient λ/d).</li><li>Darken the room so the maxima are clear; mark their centres.</li><li>Laser safety: don't look into the beam, avoid reflective surfaces, warning sign.</li></ul>`},
+ {t:"interference extended",m:6,q:`<p>Explain how the bright and dark fringes form in Young's double-slit experiment, and why a single source before the double slit was needed when filament lamps were used.</p>`,
+  a:`<p><b>Level 3 answer covers:</b></p><ul><li>Light diffracts at each slit so the waves spread out and overlap.</li><li>Waves superpose where they overlap.</li><li>Bright fringe: path difference nλ; waves arrive in phase; constructive interference.</li><li>Dark fringe: path difference (n + ½)λ; antiphase; destructive interference.</li><li>Fringes need coherent sources: same frequency, constant phase difference.</li><li>Light from a filament comes in random bursts; one narrow single slit makes both double slits receive light from the same wavefront, so they are coherent.</li></ul>`}
+]};
+
+/* ---------------- render cards ---------------- */
+function card(item, idx, label){
+  const el=document.createElement('article');
+  el.className='qcard';
+  el.dataset.tags=item.t||'';
+  el.innerHTML=`<div class="qmeta"><span class="side">${label} ${idx+1}</span><span class="mk">${item.m} mark${item.m>1?'s':''}</span></div>
+    <div class="qbody front">${item.q}</div>
+    <div class="qbody ans back" hidden><div class="tagline" style="margin-bottom:6px">Answer</div>${item.a}</div>
+    <button class="flip" type="button">Show answer</button>`;
+  const btn=el.querySelector('.flip'),front=el.querySelector('.front'),back=el.querySelector('.back'),side=el.querySelector('.side');
+  btn.addEventListener('click',()=>{
+    const show=back.hidden; back.hidden=!show; front.hidden=show;
+    el.classList.toggle('flipped',show);
+    btn.textContent=show?'Back to question':'Show answer';
+    side.textContent=(show?'Answer ':label+' ')+(idx+1);
+  });
+  return el;
+}
+document.querySelectorAll('[data-qset]').forEach(g=>{
+  const set=g.dataset.qset; const lab=set==='practice'?'P':'Q';
+  Q[set].forEach((it,i)=>g.appendChild(card(it,i,lab)));
+});
+/* practice filters */
+const pgrid=document.querySelector('[data-qset="practice"]');
+function applyFilter(f){
+  let n=0,marks=0;
+  pgrid.querySelectorAll('.qcard').forEach((c,i)=>{
+    const show=f==='all'||c.dataset.tags.split(' ').includes(f);
+    c.hidden=!show; if(show){n++;marks+=Q.practice[i].m}
+  });
+  document.getElementById('tally').textContent=`${n} questions · ${marks} marks`;
+}
+document.getElementById('filters').addEventListener('click',e=>{
+  const b=e.target.closest('.chip'); if(!b)return;
+  document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===b));
+  applyFilter(b.dataset.f);
+});
+document.getElementById('reset').addEventListener('click',()=>{
+  pgrid.querySelectorAll('.qcard.flipped .flip').forEach(b=>b.click());
+});
+applyFilter('all');
+
+/* ---------------- theme tokens ---------------- */
+let C={};
+function readTokens(){const s=getComputedStyle(document.documentElement);
+  ['paper','surface','ink','muted','line','grid','accent','accent-soft','wave2','node','good'].forEach(n=>C[n]=s.getPropertyValue('--'+n).trim());}
+readTokens();
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readTokens)}catch(e){}
+new MutationObserver(readTokens).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','class','style']});
+function hexRgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]}
+function alpha(hex,a){const[r,g,b]=hexRgb(hex);return `rgba(${r},${g},${b},${a})`}
+function nmRgb(nm){let r=0,g=0,b=0;
+  if(nm<440){r=-(nm-440)/40;b=1}else if(nm<490){g=(nm-440)/50;b=1}else if(nm<510){g=1;b=-(nm-510)/20}
+  else if(nm<580){r=(nm-510)/70;g=1}else if(nm<645){r=1;g=-(nm-645)/65}else{r=1}
+  let f=nm<420?0.3+0.7*(nm-380)/40:nm>680?0.3+0.7*(780-nm)/100:1;
+  return [Math.round(255*r*f),Math.round(255*g*f),Math.round(255*b*f)];}
+const rgbStr=(c,a=1)=>`rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+/* ---------------- canvas helpers ---------------- */
+function sizeCanvas(c,aspect,minH){
+  const w=c.clientWidth||c.parentElement.clientWidth; const h=Math.max(minH||0,Math.round(w*aspect));
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(c._w!==w||c._h!==h){c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);c._w=w;c._h=h}
+  const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return{ctx,w,h};
+}
+function bg(ctx,w,h){ctx.fillStyle=C.surface;ctx.fillRect(0,0,w,h);ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  for(let x=0.5;x<w;x+=20){ctx.moveTo(x,0);ctx.lineTo(x,h)}for(let y=0.5;y<h;y+=20){ctx.moveTo(0,y);ctx.lineTo(w,y)}ctx.stroke();}
+function label(ctx,t,x,y,col,align='center',size=12){ctx.fillStyle=col;ctx.font=`500 ${size}px "JetBrains Mono", monospace`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(t,x,y)}
+function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}
+function arrowHead(ctx,x,y,ang,s,col){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-s*Math.cos(ang-0.4),y-s*Math.sin(ang-0.4));ctx.lineTo(x-s*Math.cos(ang+0.4),y-s*Math.sin(ang+0.4));ctx.closePath();ctx.fill()}
+const $=id=>document.getElementById(id);
+function seg(id,cb){const s=$(id);s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;s.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));cb(b.dataset.v)})}
+const fmt=(x,d=2)=>Number(x).toFixed(d);
+function sci(x,d=2){if(x===0)return'0';const e=Math.floor(Math.log10(Math.abs(x)));const m=x/10**e;return `${m.toFixed(d)} × 10${String(e).replace('-','⁻').replace(/\d/g,c=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[c])}`}
+
+/* ---------------- sims ---------------- */
+const sims={};
+const paused={};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* PHASE */
+(()=>{const st={frac:0.25,mode:'T'};const cv=$('c-phase');
+  seg('ph-mode',v=>st.mode=v);
+  const inp=$('ph-frac');
+  function upd(){st.frac=+inp.value;$('ph-frac-o').textContent=fmt(st.frac)+'λ';
+    const deg=(st.frac*360)%360; const rad=(st.frac*2)%2;
+    $('ph-dx').textContent=fmt(st.frac)+' λ';
+    $('ph-deg').textContent=Math.round(deg)+'°'+(st.frac>=1&&st.frac*360!==deg?'  ('+Math.round(st.frac*360)+'°)':'');
+    $('ph-rad').textContent=(rad===0?'0':fmt(rad)+'π')+' rad';
+    let s;
+    if(Math.abs(deg)<1e-6) s='<b>In phase.</b> A and B always have the same displacement and velocity.';
+    else if(Math.abs(deg-180)<1e-6) s='<b>Antiphase.</b> A and B always have equal and opposite displacements.';
+    else s=`<b>B lags A by ${Math.round(deg)}°.</b> B does what A did ${fmt(deg/360,2)} of a period earlier.`;
+    $('ph-status').innerHTML=s;}
+  inp.addEventListener('input',upd);upd();
+  sims.phase={draw(t){const{ctx,w,h}=sizeCanvas(cv,0.5,220);bg(ctx,w,h);
+    const lam=w*0.36,k=2*Math.PI/lam,om=2*Math.PI*0.45,xa=w*0.1,xb=xa+st.frac*lam,mid=h*0.52;
+    const y=x=>Math.sin(k*x-om*t);
+    if(st.mode==='T'){
+      const A=h*0.26;
+      ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(w,mid);ctx.stroke();
+      ctx.strokeStyle=C.accent;ctx.lineWidth=2.5;ctx.beginPath();
+      for(let x=0;x<=w;x+=2){const yy=mid-A*y(x);x?ctx.lineTo(x,yy):ctx.moveTo(x,yy)}ctx.stroke();
+      [[xa,C.wave2,'A'],[xb,C.node,'B']].forEach(([x,c,n])=>{
+        ctx.setLineDash([3,4]);ctx.strokeStyle=alpha(c,0.6);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,mid-A-6);ctx.lineTo(x,mid+A+6);ctx.stroke();ctx.setLineDash([]);
+        dot(ctx,x,mid-A*y(x),7,c);label(ctx,n,x,mid+A+18,c,'center',13);});
+    }else{
+      const s=lam*0.07;const rows=7,top=h*0.22,bot=h*0.82;
+      for(let r=0;r<rows;r++){const yy=top+(bot-top)*r/(rows-1);
+        for(let x0=-10;x0<w+10;x0+=9){const x=x0+s*Math.sin(k*x0-om*t);dot(ctx,x,yy+((x0*7+r*13)%5-2)*0.6,2.3,alpha(C.ink,0.55))}}
+      const yy=top+(bot-top)*3/(rows-1);
+      [[xa,C.wave2,'A'],[xb,C.node,'B']].forEach(([x0,c,n])=>{
+        ctx.setLineDash([3,4]);ctx.strokeStyle=alpha(c,0.6);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x0-s,yy-14);ctx.lineTo(x0+s,yy-14);ctx.stroke();ctx.setLineDash([]);
+        dot(ctx,x0+s*Math.sin(k*x0-om*t),yy,6,c);label(ctx,n,x0,bot+18,c,'center',13);});
+      label(ctx,'particles oscillate left ↔ right about fixed positions',w/2,top-22,C.muted,'center',11);
+    }
+    // bracket
+    if(st.frac>0){const by=st.mode==='T'?h*0.1:h*0.1;ctx.strokeStyle=C.muted;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(xa,by+6);ctx.lineTo(xa,by);ctx.lineTo(xb,by);ctx.lineTo(xb,by+6);ctx.stroke();
+      if(st.mode==='T')label(ctx,'Δx = '+fmt(st.frac)+'λ',(xa+xb)/2,by-9,C.ink,'center',12);}
+  }};
+})();
+
+/* STATIONARY */
+(()=>{const st={n:2,L:0.65,T:60,mu:0.4,comp:false};const cv=$('c-stationary');
+  const ids=['n','L','T','mu'];
+  function upd(){ids.forEach(k=>st[k]=+$('sw-'+k).value);st.comp=$('sw-comp').checked;
+    $('sw-n-o').textContent=st.n+(st.n===1?' (fundamental)':'');$('sw-L-o').textContent=fmt(st.L)+' m';$('sw-T-o').textContent=st.T+' N';$('sw-mu-o').textContent=fmt(st.mu,1)+' g m⁻¹';
+    const v=Math.sqrt(st.T/(st.mu/1000)),f1=v/(2*st.L);
+    $('sw-v').textContent=fmt(v,0)+' m s⁻¹';$('sw-lam').textContent=fmt(2*st.L/st.n,3)+' m';$('sw-f1').textContent=fmt(f1,0)+' Hz';$('sw-fn').textContent=fmt(st.n*f1,0)+' Hz';}
+  ids.forEach(k=>$('sw-'+k).addEventListener('input',upd));$('sw-comp').addEventListener('change',upd);upd();
+  sims.stationary={draw(t){const{ctx,w,h}=sizeCanvas(cv,0.48,220);bg(ctx,w,h);
+    const x0=34,x1=w-34,mid=h*0.5,A=h*0.24,om=2*Math.PI*0.55,n=st.n,c=Math.cos(om*t);
+    const U=x=>(x-x0)/(x1-x0);
+    // envelope
+    ctx.setLineDash([4,5]);ctx.strokeStyle=C.muted;ctx.lineWidth=1;
+    [1,-1].forEach(s=>{ctx.beginPath();for(let x=x0;x<=x1;x+=2){const yy=mid-s*A*Math.sin(n*Math.PI*U(x));x===x0?ctx.moveTo(x,yy):ctx.lineTo(x,yy)}ctx.stroke()});ctx.setLineDash([]);
+    if(st.comp){[[-1,C.wave2],[1,C.good]].forEach(([sg,col])=>{ctx.strokeStyle=alpha(col,0.8);ctx.lineWidth=1.5;ctx.beginPath();
+      for(let x=x0;x<=x1;x+=2){const yy=mid-(A/2)*Math.sin(n*Math.PI*U(x)+sg*om*t);x===x0?ctx.moveTo(x,yy):ctx.lineTo(x,yy)}ctx.stroke()});
+      label(ctx,'→ wave travelling right',x0+4,h-14,C.wave2,'left',11);label(ctx,'wave travelling left ←',x1-4,h-14,C.good,'right',11);}
+    // string loops
+    for(let j=0;j<n;j++){ctx.strokeStyle=j%2?C.wave2:C.accent;ctx.lineWidth=3;ctx.beginPath();
+      const a=x0+(x1-x0)*j/n,b=x0+(x1-x0)*(j+1)/n;
+      for(let x=a;x<=b+0.5;x+=1.5){const yy=mid-A*Math.sin(n*Math.PI*U(x))*c;x===a?ctx.moveTo(x,yy):ctx.lineTo(x,yy)}ctx.stroke();}
+    // clamps
+    ctx.fillStyle=C.ink;ctx.fillRect(x0-10,mid-22,8,44);ctx.fillRect(x1+2,mid-22,8,44);
+    for(let j=0;j<=n;j++){const x=x0+(x1-x0)*j/n;dot(ctx,x,mid,5,C.node);label(ctx,'N',x,mid+A+16,C.node,'center',12)}
+    for(let j=0;j<n;j++){const x=x0+(x1-x0)*(j+0.5)/n;label(ctx,'A',x,mid-A-14,C.ink,'center',12)}
+    label(ctx,'L = '+fmt(st.L)+' m',w/2,16,C.muted,'center',11);
+  }};
+})();
+
+/* INTERFERENCE */
+(()=>{const st={lam:600,s:0.5,D:2.0,inc:false,ph2:0};const cv=$('c-interference');
+  const off=document.createElement('canvas');
+  function upd(){st.lam=+$('yi-lam').value;st.s=+$('yi-s').value;st.D=+$('yi-D').value;st.inc=$('yi-incoh').checked;
+    $('yi-lam-o').textContent=st.lam+' nm';$('yi-s-o').textContent=fmt(st.s)+' mm';$('yi-D-o').textContent=fmt(st.D,1)+' m';
+    const w=st.lam*1e-9*st.D/(st.s*1e-3);
+    $('yi-w').textContent=fmt(w*1000,2)+' mm';
+    $('yi-calc').textContent=`${st.lam}×10⁻⁹ × ${fmt(st.D,1)} / ${fmt(st.s)}×10⁻³`;
+    $('yi-status').innerHTML=st.inc?'<b>Incoherent:</b> the phase difference between the sources keeps changing, so maxima and minima move about too fast to see. The screen is evenly lit.':'<b>Coherent:</b> constant phase difference, so bright and dark fringes stay in fixed places.';}
+  ['yi-lam','yi-s','yi-D'].forEach(i=>$(i).addEventListener('input',upd));$('yi-incoh').addEventListener('change',upd);upd();
+  let frame=0;
+  sims.interference={draw(t){const{ctx,w,h}=sizeCanvas(cv,0.62,260);ctx.fillStyle=C.surface;ctx.fillRect(0,0,w,h);
+    frame++; if(st.inc&&frame%5===0)st.ph2=Math.random()*6.283; if(!st.inc)st.ph2=0;
+    const bx=Math.round(w*0.07),fx1=Math.round(w*0.66),cy=h/2;
+    const lp=10*st.lam/600,sp=st.s*70,k=2*Math.PI/lp,om=2*Math.PI*0.8;
+    const cell=3,cols=Math.ceil((fx1-bx)/cell),rows=Math.ceil(h/cell);
+    off.width=cols;off.height=rows;const octx=off.getContext('2d');const img=octx.createImageData(cols,rows);
+    const bgc=hexRgb(C.surface),wc=nmRgb(st.lam);const y1=cy-sp/2,y2=cy+sp/2;
+    for(let j=0;j<rows;j++){const py=j*cell+cell/2;for(let i=0;i<cols;i++){const px=i*cell+cell/2;
+      const r1=Math.hypot(px,py-y1),r2=Math.hypot(px,py-y2);
+      const v=Math.cos(k*r1-om*t)+Math.cos(k*r2-om*t+st.ph2);
+      const b=Math.max(0,v)/2; const p=(j*cols+i)*4;
+      img.data[p]=bgc[0]+(wc[0]-bgc[0])*b;img.data[p+1]=bgc[1]+(wc[1]-bgc[1])*b;img.data[p+2]=bgc[2]+(wc[2]-bgc[2])*b;img.data[p+3]=255;}}
+    octx.putImageData(img,0,0);ctx.imageSmoothingEnabled=true;ctx.drawImage(off,bx,0,cols*cell,rows*cell);
+    // incoming plane waves
+    for(let x=bx-((om*t/k)%lp+lp)%lp; x>0; x-=lp){ctx.strokeStyle=rgbStr(wc,0.55);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,cy-40);ctx.lineTo(x,cy+40);ctx.stroke()}
+    // barrier
+    ctx.fillStyle=C.ink;const gap=3;ctx.fillRect(bx-3,0,6,y1-gap);ctx.fillRect(bx-3,y1+gap,6,y2-y1-2*gap);ctx.fillRect(bx-3,y2+gap,6,h-y2-gap);
+    // screen area
+    const sx=w*0.70,sw=w*0.06,gx=w*0.79,gw=w*0.18;
+    ctx.fillStyle=C.paper;ctx.fillRect(w*0.675,0,w*0.325,h);
+    const Ym=12; // mm
+    for(let yy=0;yy<h;yy++){const ymm=(yy-cy)/(h/2)*Ym;let I;
+      if(st.inc)I=0.5;else{const wv=st.lam*1e-6*st.D/(st.s);I=Math.cos(Math.PI*ymm/wv)**2;}
+      I*=Math.exp(-((ymm/26)**2));ctx.fillStyle=rgbStr(wc,Math.min(1,I*1.1));ctx.fillRect(sx,yy,sw,1);}
+    ctx.strokeStyle=C.line;ctx.strokeRect(sx,0.5,sw,h-1);
+    // intensity graph
+    ctx.strokeStyle=C.line;ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,h);ctx.stroke();
+    ctx.strokeStyle=C.ink;ctx.lineWidth=1.6;ctx.beginPath();
+    for(let yy=0;yy<h;yy+=1){const ymm=(yy-cy)/(h/2)*Ym;let I=st.inc?0.5:Math.cos(Math.PI*ymm/(st.lam*1e-6*st.D/st.s))**2;I*=Math.exp(-((ymm/26)**2));
+      const x=gx+I*gw;yy?ctx.lineTo(x,yy):ctx.moveTo(x,yy)}ctx.stroke();
+    [-10,-5,0,5,10].forEach(m=>{const yy=cy+m/Ym*(h/2);ctx.strokeStyle=C.muted;ctx.beginPath();ctx.moveTo(gx-4,yy);ctx.lineTo(gx,yy);ctx.stroke();});
+    label(ctx,'+10 mm',w*0.675+4,cy-10/Ym*h/2,C.muted,'left',10);label(ctx,'0',w*0.675+4,cy,C.muted,'left',10);label(ctx,'−10 mm',w*0.675+4,cy+10/Ym*h/2,C.muted,'left',10);
+    label(ctx,'screen',sx+sw/2,10,C.muted,'center',10);label(ctx,'intensity',gx+gw/2,10,C.muted,'center',10);
+    label(ctx,'S₁',bx+14,y1-12,C.ink,'left',11);label(ctx,'S₂',bx+14,y2+12,C.ink,'left',11);
+  }};
+})();
+
+/* DIFFRACTION */
+(()=>{const st={mode:'slit',lam:600,a:0.1,N:300,white:false};const cv=$('c-diffraction');
+  seg('df-mode',v=>{st.mode=v;$('df-a-wrap').hidden=v!=='slit';$('df-N-wrap').hidden=v==='slit';$('df-white-wrap').hidden=v==='slit';
+    $('df-bar').textContent=v==='slit'?'screen 2.0 m from slit':'angles measured from the straight-through beam';upd();});
+  function upd(){st.lam=+$('df-lam').value;st.a=+$('df-a').value;st.N=+$('df-N').value;st.white=$('df-white').checked;
+    $('df-lam-o').textContent=st.lam+' nm';$('df-a-o').textContent=fmt(st.a)+' mm';$('df-N-o').textContent=st.N+' mm⁻¹';
+    const r=$('df-read');
+    if(st.mode==='slit'){const cw=2*st.lam*1e-9*2/(st.a*1e-3);
+      r.innerHTML=`<div><dt>central max width</dt><dd>${fmt(cw*1000,1)} mm</dd></div><div><dt>other maxima width</dt><dd>${fmt(cw*500,1)} mm</dd></div><div><dt>λ / slit width</dt><dd>${sci(st.lam*1e-9/(st.a*1e-3))}</dd></div>`;}
+    else{const d=1e-3/st.N,nm=Math.floor(d/(st.lam*1e-9)+1e-9);
+      let angs=[];for(let n=1;n<=Math.min(nm,4);n++)angs.push(`${n}: ${fmt(Math.asin(n*st.lam*1e-9/d)*180/Math.PI,1)}°`);
+      r.innerHTML=`<div><dt>d</dt><dd>${sci(d)} m</dd></div><div><dt>d/λ → n<sub>max</sub></dt><dd>${fmt(d/(st.lam*1e-9))} → ${nm}</dd></div><div><dt>total maxima</dt><dd>${2*nm+1}</dd></div><div style="grid-column:1/-1"><dt>θ for each order</dt><dd>${angs.join(' · ')}${nm>4?' …':''}</dd></div>`;}}
+  ['df-lam','df-a','df-N'].forEach(i=>$(i).addEventListener('input',upd));$('df-white').addEventListener('change',upd);upd();
+  sims.diffraction={draw(){const{ctx,w,h}=sizeCanvas(cv,0.55,240);bg(ctx,w,h);
+    if(st.mode==='slit'){
+      const Ym=40,top=h*0.12,stripH=h*0.16,base=h*0.88,gh=h*0.55,wc=nmRgb(st.lam);
+      const I=ymm=>{const b=Math.PI*st.a*1e-3*ymm*1e-3/(st.lam*1e-9*2);return b===0?1:(Math.sin(b)/b)**2};
+      for(let x=0;x<w;x++){const v=I((x-w/2)/(w/2)*Ym);ctx.fillStyle=rgbStr(wc,Math.min(1,Math.sqrt(v)*1.05));ctx.fillRect(x,top,1,stripH)}
+      ctx.strokeStyle=C.line;ctx.strokeRect(0.5,top,w-1,stripH);
+      ctx.beginPath();ctx.moveTo(0,base);for(let x=0;x<=w;x++){ctx.lineTo(x,base-gh*I((x-w/2)/(w/2)*Ym))}ctx.lineTo(w,base);ctx.closePath();
+      ctx.fillStyle=rgbStr(wc,0.25);ctx.fill();ctx.strokeStyle=C.ink;ctx.lineWidth=1.6;ctx.stroke();
+      ctx.strokeStyle=C.muted;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,base);ctx.lineTo(w,base);ctx.stroke();
+      for(let m=-40;m<=40;m+=10){const x=w/2+m/Ym*w/2;ctx.beginPath();ctx.moveTo(x,base);ctx.lineTo(x,base+5);ctx.stroke();label(ctx,(m>0?'+':'')+m,x,base+15,C.muted,'center',10)}
+      label(ctx,'position on screen / mm',w-6,top+stripH+14,C.muted,'right',10);
+      // central width bracket
+      const y0=st.lam*1e-9*2/(st.a*1e-3)*1000;const xl=w/2-y0/Ym*w/2,xr=w/2+y0/Ym*w/2;
+      if(xl>4){ctx.strokeStyle=C.accent;ctx.lineWidth=1.5;const by=base-gh-14;ctx.beginPath();ctx.moveTo(xl,by+6);ctx.lineTo(xl,by);ctx.lineTo(xr,by);ctx.lineTo(xr,by+6);ctx.stroke();label(ctx,'central max',(xl+xr)/2,by-10,C.accent,'center',11)}
+    }else{
+      const gx=w*0.12,cy=h/2,R=Math.min(w*0.8,h*0.44);
+      ctx.strokeStyle=C.ink;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(gx,cy-R*0.5);ctx.lineTo(gx,cy+R*0.5);ctx.stroke();
+      ctx.lineWidth=1;for(let y=cy-R*0.5;y<cy+R*0.5;y+=5){ctx.beginPath();ctx.moveTo(gx-4,y);ctx.lineTo(gx+4,y);ctx.stroke()}
+      ctx.setLineDash([3,5]);ctx.strokeStyle=C.line;ctx.beginPath();ctx.arc(gx,cy,R,-Math.PI/2,Math.PI/2);ctx.stroke();ctx.setLineDash([]);
+      [30,60].forEach(a=>{[1,-1].forEach(s=>{const r=a*Math.PI/180*s;label(ctx,a+'°',gx+(R+18)*Math.cos(r),cy-(R+18)*Math.sin(r),C.muted,'center',10)})});
+      const d=1e-3/st.N;const lams=st.white?[400,430,460,490,520,550,580,610,640,670,700]:[st.lam];
+      // incident
+      const ic=st.white?[150,150,150]:nmRgb(st.lam);ctx.strokeStyle=st.white?C.ink:rgbStr(ic);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(gx,cy);ctx.stroke();
+      lams.forEach(L=>{const nm=Math.floor(d/(L*1e-9)+1e-9);const col=nmRgb(L);
+        for(let n=-nm;n<=nm;n++){const s=n*L*1e-9/d;if(Math.abs(s)>=1)continue;const th=Math.asin(s);
+          ctx.strokeStyle=rgbStr(col,n===0&&st.white?0.25:0.9);ctx.lineWidth=st.white?1.5:2.2;ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(gx+R*Math.cos(th),cy-R*Math.sin(th));ctx.stroke();
+          if(!st.white||L===550){label(ctx,n===0?'0':String(n),gx+(R+(st.white?-14:10))*Math.cos(th)+(st.white?0:6),cy-(R+(st.white?-14:10))*Math.sin(th),C.ink,'center',12)}}
+      });
+      if(st.white){ctx.strokeStyle=C.ink;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(gx,cy);ctx.lineTo(gx+R,cy);ctx.stroke();label(ctx,'zero order: white',gx+R*0.55,cy+12,C.muted,'center',10)}
+      label(ctx,'grating',gx,cy+R*0.5+14,C.muted,'center',10);
+    }
+  }};
+})();
+
+/* REFRACTION */
+(()=>{const st={mode:'boundary',th:35,n1:1.5,n2:1.0};const cv=$('c-refraction');
+  seg('rf-mode',v=>{st.mode=v;
+    if(v==='fibre'){$('rf-th').value=15;$('rf-n1').value=1.50;$('rf-n2').value=1.45;$('rf-th-l').firstChild.textContent='Entry angle in air ';$('rf-n1-l').firstChild.textContent='n core ';$('rf-n2-l').firstChild.textContent='n cladding ';$('rf-bar').textContent='light entering a step-index fibre from air';}
+    else{$('rf-th').value=35;$('rf-n1').value=1.50;$('rf-n2').value=1.00;$('rf-th-l').firstChild.textContent='Angle of incidence ';$('rf-n1-l').firstChild.textContent='n₁ (lower medium) ';$('rf-n2-l').firstChild.textContent='n₂ (upper medium) ';$('rf-bar').textContent='ray from medium 1 into medium 2';}
+    upd();});
+  const D=Math.PI/180;
+  function upd(){st.th=+$('rf-th').value;st.n1=+$('rf-n1').value;st.n2=+$('rf-n2').value;
+    $('rf-th-o').textContent=fmt(st.th,1)+'°';$('rf-n1-o').textContent=fmt(st.n1);$('rf-n2-o').textContent=fmt(st.n2);
+    const hasC=st.n2<st.n1;const Cc=hasC?Math.asin(st.n2/st.n1)/D:null;
+    if(st.mode==='boundary'){const s2=st.n1*Math.sin(st.th*D)/st.n2;
+      $('rf-read').innerHTML=`<div><dt>critical angle</dt><dd>${hasC?fmt(Cc,1)+'°':'none'}</dd></div><div><dt>angle of refraction</dt><dd>${s2<=1?fmt(Math.asin(s2)/D,1)+'°':'—'}</dd></div><div><dt>speed in medium 1</dt><dd>${sci(3e8/st.n1)} m s⁻¹</dd></div>`;
+      let s;if(!hasC)s='<b>No critical angle:</b> light is going into a medium with equal or higher n, so it always refracts.';
+      else if(Math.abs(st.th-Cc)<0.6)s='<b>At the critical angle:</b> refracted ray travels along the boundary (90°).';
+      else if(st.th>Cc)s='<b>Total internal reflection:</b> angle of incidence is greater than the critical angle.';
+      else s='<b>Refraction</b> with a weak partial reflection. Increase the angle to reach the critical angle.';
+      $('rf-status').innerHTML=s;}
+    else{const r=Math.asin(Math.sin(st.th*D)/st.n1);const inc=90-r/D;
+      const acc=hasC?Math.sqrt(st.n1**2-st.n2**2):0;
+      $('rf-read').innerHTML=`<div><dt>critical angle (core)</dt><dd>${hasC?fmt(Cc,1)+'°':'none'}</dd></div><div><dt>angle at core boundary</dt><dd>${fmt(inc,1)}°</dd></div><div><dt>largest trapped entry angle</dt><dd>${!hasC?'none':acc>=1?'all angles':fmt(Math.asin(acc)/D,1)+'°'}</dd></div>`;
+      $('rf-status').innerHTML=hasC&&inc>Cc?'<b>Trapped:</b> angle at the core–cladding boundary exceeds the critical angle, so the ray undergoes TIR all the way along.':'<b>Escapes:</b> angle at the core–cladding boundary is below the critical angle, so the ray refracts into the cladding and is lost.';}}
+  ['rf-th','rf-n1','rf-n2'].forEach(i=>$(i).addEventListener('input',upd));upd();
+  sims.refraction={draw(t){const{ctx,w,h}=sizeCanvas(cv,0.58,240);ctx.fillStyle=C.surface;ctx.fillRect(0,0,w,h);
+    const ray=C.wave2;
+    if(st.mode==='boundary'){const cy=h/2,ox=w/2;
+      ctx.fillStyle=alpha(C.accent,0.08+0.12*(st.n1-1));ctx.fillRect(0,cy,w,h-cy);ctx.fillStyle=alpha(C.accent,0.08+0.12*(st.n2-1));ctx.fillRect(0,0,w,cy);
+      ctx.strokeStyle=C.ink;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.stroke();
+      ctx.setLineDash([5,5]);ctx.strokeStyle=C.muted;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ox,8);ctx.lineTo(ox,h-8);ctx.stroke();ctx.setLineDash([]);
+      label(ctx,'normal',ox+6,14,C.muted,'left',10);label(ctx,'medium 2  n = '+fmt(st.n2),10,16,C.ink,'left',11);label(ctx,'medium 1  n = '+fmt(st.n1),10,h-14,C.ink,'left',11);
+      const R=Math.min(w*0.44,h*0.46),th=st.th*D,s2=st.n1*Math.sin(th)/st.n2,tir=s2>1;
+      const sx=ox-R*Math.sin(th),sy=cy+R*Math.cos(th);
+      ctx.strokeStyle=ray;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ox,cy);ctx.stroke();arrowHead(ctx,(sx+ox)/2,(sy+cy)/2,Math.atan2(cy-sy,ox-sx),10,ray);
+      const ra=tir?1:0.35+0.4*Math.max(0,s2-0.85)/0.15*(s2>0.85?1:0);
+      ctx.strokeStyle=alpha(ray,Math.min(1,ra));ctx.lineWidth=tir?3:2;const rx=ox+R*Math.sin(th),ry=cy+R*Math.cos(th);ctx.beginPath();ctx.moveTo(ox,cy);ctx.lineTo(rx,ry);ctx.stroke();arrowHead(ctx,(ox+rx)/2+ (rx-ox)*0.1,(cy+ry)/2+(ry-cy)*0.1,Math.atan2(ry-cy,rx-ox),10,alpha(ray,Math.min(1,ra)));
+      ctx.strokeStyle=C.muted;ctx.lineWidth=1;ctx.beginPath();ctx.arc(ox,cy,34,Math.PI/2,Math.PI/2+th);ctx.stroke();label(ctx,'θ₁',ox-12-34*Math.sin(th/2),cy+12+30*Math.cos(th/2),C.ink,'center',11);
+      if(!tir){const t2=Math.asin(s2);const ex=ox+R*Math.sin(t2),ey=cy-R*Math.cos(t2);ctx.strokeStyle=ray;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ox,cy);ctx.lineTo(ex,ey);ctx.stroke();arrowHead(ctx,(ox+ex)/2+(ex-ox)*0.1,(cy+ey)/2+(ey-cy)*0.1,Math.atan2(ey-cy,ex-ox),10,ray);
+        ctx.strokeStyle=C.muted;ctx.lineWidth=1;ctx.beginPath();ctx.arc(ox,cy,40,-Math.PI/2,-Math.PI/2+t2);ctx.stroke();label(ctx,'θ₂',ox+10+44*Math.sin(t2/2),cy-14-40*Math.cos(t2/2),C.ink,'center',11);}
+      if(st.n2<st.n1){const Cc=Math.asin(st.n2/st.n1);ctx.setLineDash([2,4]);ctx.strokeStyle=C.node;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(ox,cy);ctx.lineTo(ox-R*0.8*Math.sin(Cc),cy+R*0.8*Math.cos(Cc));ctx.stroke();ctx.setLineDash([]);
+        label(ctx,'critical angle',ox-R*0.8*Math.sin(Cc)-4,cy+R*0.8*Math.cos(Cc)+10,C.node,'right',10);}
+    }else{
+      const fx=w*0.16,cy=h/2,ch=h*0.2,cl=h*0.13;const yt=cy-ch/2,yb=cy+ch/2;
+      ctx.fillStyle=alpha(C.accent,0.12);ctx.fillRect(fx,yt-cl,w-fx,cl);ctx.fillRect(fx,yb,w-fx,cl);
+      ctx.fillStyle=alpha(C.accent,0.28);ctx.fillRect(fx,yt,w-fx,ch);
+      ctx.strokeStyle=C.ink;ctx.lineWidth=1;ctx.strokeRect(fx,yt-cl,w-fx,ch+2*cl);ctx.beginPath();ctx.moveTo(fx,yt);ctx.lineTo(w,yt);ctx.moveTo(fx,yb);ctx.lineTo(w,yb);ctx.stroke();
+      label(ctx,'cladding  n = '+fmt(st.n2),w-8,yt-cl/2,C.ink,'right',11);label(ctx,'core  n = '+fmt(st.n1),w-8,cy+ch*0.32,C.ink,'right',11);label(ctx,'air',12,16,C.muted,'left',11);
+      const th=st.th*D;const L=Math.min(fx-10,h*0.35);const sx=fx-L*Math.cos(th),sy=cy+L*Math.sin(th);
+      ctx.setLineDash([4,4]);ctx.strokeStyle=C.muted;ctx.beginPath();ctx.moveTo(fx-L,cy);ctx.lineTo(fx+30,cy);ctx.stroke();ctx.setLineDash([]);
+      const pts=[[sx,sy],[fx,cy]];const r=Math.asin(Math.sin(th)/st.n1);let dx=Math.cos(r),dy=-Math.sin(r);let x=fx,y=cy;
+      const hasC=st.n2<st.n1,Cc=hasC?Math.asin(st.n2/st.n1):9,inc=Math.PI/2-r;let escaped=false;
+      for(let i=0;i<200&&x<w;i++){if(Math.abs(dy)<1e-6){x=w;pts.push([x,y]);break}
+        const ty=dy<0?yt:yb;const tt=(ty-y)/dy;const nx=x+dx*tt;if(nx>=w){pts.push([w,y+dy*(w-x)/dx]);x=w;break}
+        x=nx;y=ty;pts.push([x,y]);
+        if(!(hasC&&inc>Cc)){const t2=Math.asin(Math.min(1,st.n1*Math.sin(inc)/st.n2));const ex=x+Math.sin(t2)*cl*1.6/Math.max(0.2,Math.cos(t2)),ey=y+(dy<0?-1:1)*cl*1.6;pts.push([Math.min(ex,w),ey]);escaped=true;break}
+        dy=-dy;}
+      ctx.strokeStyle=ray;ctx.lineWidth=2.5;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();
+      arrowHead(ctx,(sx+fx)/2,(sy+cy)/2,Math.atan2(cy-sy,fx-sx),9,ray);
+      // pulse dot travelling along path
+      let lens=[],tot=0;for(let i=1;i<pts.length;i++){const l=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);lens.push(l);tot+=l}
+      let s=(t*140)%tot;for(let i=0;i<lens.length;i++){if(s<=lens[i]){const f=s/lens[i];dot(ctx,pts[i][0]+(pts[i+1][0]-pts[i][0])*f,pts[i][1]+(pts[i+1][1]-pts[i][1])*f,5,C.node);break}s-=lens[i]}
+      if(escaped)label(ctx,'escapes',Math.min(pts[pts.length-1][0]+6,w-40),pts[pts.length-1][1]+(pts[pts.length-1][1]<cy?-8:8),C.node,'left',11);
+      label(ctx,'θ',sx+ (fx-sx)*0.55,cy+14,C.ink,'center',11);
+    }
+  }};
+})();
+
+/* POLARISATION */
+(()=>{const st={th:30};const cv=$('c-polarisation');const D=Math.PI/180;
+  function upd(){st.th=+$('po-th').value;$('po-th-o').textContent=st.th+'°';const a=((st.th%180)+180)%180;const I=Math.cos(st.th*D)**2;
+    $('po-ang').textContent=st.th+'°';$('po-I').textContent=Math.round(I*100)+'% of maximum';
+    $('po-status').innerHTML=I>0.995?'<b>Maximum:</b> transmission axes parallel.':I<0.005?'<b>Zero:</b> transmission axes perpendicular, so the polarised light is completely blocked.':'<b>Partly transmitted:</b> only the component of the oscillation along the analyser axis gets through.';}
+  $('po-th').addEventListener('input',upd);upd();
+  function disk(ctx,x,y,r,ang,col){ctx.save();ctx.beginPath();ctx.ellipse(x,y,r*0.38,r,0,0,7);ctx.fillStyle=alpha(col,0.1);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();ctx.clip();
+    const ux=0.38*Math.sin(ang),uy=-Math.cos(ang),px=0.38*Math.cos(ang),py=Math.sin(ang);ctx.strokeStyle=alpha(col,0.55);ctx.lineWidth=1.2;
+    for(let k=-6;k<=6;k++){const cx=x+px*k*r/6.5,cy=y+py*k*r/6.5;ctx.beginPath();ctx.moveTo(cx-ux*r*1.2,cy-uy*r*1.2);ctx.lineTo(cx+ux*r*1.2,cy+uy*r*1.2);ctx.stroke()}ctx.restore();}
+  sims.polarisation={draw(t){const{ctx,w,h}=sizeCanvas(cv,0.66,280);bg(ctx,w,h);
+    const sh=h*0.6,cy=sh*0.52,r=sh*0.32,A=r*0.6,lam=w*0.07,om=2*Math.PI*0.7,th=st.th*D;
+    const xs=w*0.05,xp=w*0.3,xa=w*0.6,xd=w*0.92;
+    ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xs,cy);ctx.lineTo(xd,cy);ctx.stroke();
+    // unpolarised stars
+    for(let x=xs+w*0.05;x<xp-12;x+=w*0.07){for(let k=0;k<4;k++){const a=k*Math.PI/4+t*0.6;const ux=0.38*Math.sin(a)*A*0.7,uy=-Math.cos(a)*A*0.7;
+      ctx.strokeStyle=alpha(C.wave2,0.85);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-ux,cy-uy);ctx.lineTo(x+ux,cy+uy);ctx.stroke()}}
+    dot(ctx,xs,cy,8,C.wave2);
+    disk(ctx,xp,cy,r,0,C.accent);
+    // vertical polarised wave
+    ctx.strokeStyle=C.wave2;ctx.lineWidth=2.2;ctx.beginPath();for(let x=xp;x<=xa;x+=2){const yy=cy-A*Math.sin(2*Math.PI*(x-xp)/lam-om*t);x===xp?ctx.moveTo(x,yy):ctx.lineTo(x,yy)}ctx.stroke();
+    disk(ctx,xa,cy,r,th,C.accent);
+    // transmitted along analyser axis
+    const amp=A*Math.cos(th);const ux=0.38*Math.sin(th),uy=-Math.cos(th);
+    ctx.strokeStyle=C.wave2;ctx.lineWidth=2.2;ctx.beginPath();for(let x=xa;x<=xd-14;x+=2){const s=amp*Math.sin(2*Math.PI*(x-xa)/lam-om*t);const X=x+ux*s,Y=cy+uy*s;x===xa?ctx.moveTo(X,Y):ctx.lineTo(X,Y)}ctx.stroke();
+    const I=Math.cos(th)**2;ctx.beginPath();ctx.arc(xd,cy,14,0,7);ctx.fillStyle=alpha(C.wave2,0.1+0.9*I);ctx.fill();ctx.strokeStyle=C.ink;ctx.lineWidth=1.5;ctx.stroke();
+    label(ctx,'unpolarised',(xs+xp)/2,cy+r+16,C.muted,'center',10);label(ctx,'polariser',xp,cy+r+16,C.ink,'center',10);label(ctx,'plane polarised',(xp+xa)/2,cy+r+16,C.muted,'center',10);label(ctx,'analyser '+st.th+'°',xa,cy+r+16,C.ink,'center',10);label(ctx,'detector',xd,cy+r+16,C.muted,'center',10);
+    // graph
+    const g0=sh+18,gh=h-g0-26,gx0=40,gx1=w-14;
+    ctx.strokeStyle=C.muted;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(gx0,g0);ctx.lineTo(gx0,g0+gh);ctx.lineTo(gx1,g0+gh);ctx.stroke();
+    [0,90,180,270,360].forEach(a=>{const x=gx0+(gx1-gx0)*a/360;label(ctx,a+'°',x,g0+gh+12,C.muted,'center',10)});
+    label(ctx,'I',gx0-14,g0+gh/2,C.muted,'center',11);
+    ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();for(let a=0;a<=360;a+=2){const x=gx0+(gx1-gx0)*a/360,y=g0+gh-gh*Math.cos(a*D)**2;a?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke();
+    dot(ctx,gx0+(gx1-gx0)*st.th/360,g0+gh-gh*I,6,C.node);
+  }};
+})();
+
+/* ---------------- tabs + loop ---------------- */
+const tabs=[...document.querySelectorAll('.tab')];let active='phase';
+function show(id,push){if(!document.querySelector(`[data-panel="${id}"]`))id='phase';active=id;
+  tabs.forEach(t=>{const on=t.dataset.tab===id;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1});
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.dataset.panel!==id);
+  if(push&&location.hash!=='#'+id){try{history.replaceState(null,'','#'+id)}catch(e){location.hash=id}}
+  const t=tabs.find(t=>t.dataset.tab===id);t&&t.scrollIntoView({block:'nearest',inline:'nearest'});
+  if(sims[id])sims[id].draw(times[id]||0);}
+tabs.forEach(t=>t.addEventListener('click',()=>{show(t.dataset.tab,true);window.scrollTo({top:0})}));
+$('tablist').addEventListener('keydown',e=>{const i=tabs.findIndex(t=>t.dataset.tab===active);let j=i;
+  if(e.key==='ArrowRight')j=(i+1)%tabs.length;else if(e.key==='ArrowLeft')j=(i-1+tabs.length)%tabs.length;else return;
+  e.preventDefault();show(tabs[j].dataset.tab,true);tabs[j].focus();});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)||'phase'));
+const times={};
+document.querySelectorAll('[data-pause]').forEach(b=>{const k=b.dataset.pause;paused[k]=reduce;b.textContent=reduce?'Play':'Pause';
+  b.addEventListener('click',()=>{paused[k]=!paused[k];b.textContent=paused[k]?'Play':'Pause'})});
+let last=performance.now();
+function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
+  const s=sims[active];if(s){if(!paused[active])times[active]=(times[active]||0)+dt;s.draw(times[active]||0)}
+  requestAnimationFrame(loop)}
+show(location.hash.slice(1)||'phase');requestAnimationFrame(loop);
+</script>
+
+</body></html>
